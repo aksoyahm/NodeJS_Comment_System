@@ -1,0 +1,11 @@
+When a new thread or comment is posted, it calls the putform function which posts the parent id, id, reply, vote, and date to the server. 
+
+The json data gets stored in the myThreads array.
+
+The id is a placeholder in the frontend. Each id is increased by 1 using the sum variable and stored back in the myThreads array.
+
+The client then calls the get function, which gets the data back to display it on the screen.
+
+When a comment is voted up, it calls the voteup function, which posts the id to the server. The server increases the vote of the id and the id of the thread it belongs to.
+
+The votes are sorted with the help of the myParents and myChildren arrays and stored back in the myThreads array. 

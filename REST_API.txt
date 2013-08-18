@@ -1,0 +1,27 @@
+API Documentation for the Node.JS REST API
+
+To access our server and submit certain requests:
+
+1) For the default client file, go to http://127.0.0.1:30920/
+
+2) If you want to post a new thread (or a reply) the API is: http://127.0.0.1:30920/post combined with a callback function that
+provides JSON data for that specific posts which looks like:
+
+"{\"parentID\":\"<parent id of this post>\", \"id\":\"<id of this post>\", \"value\":\"<contents of post including the URL>\", \"vote\":\"<number of votes this post has>\", \"date\":\"<the date the post was made>\"}"
+
+For example:
+"{\"parentID\":\"0\", \"id\":\"-1\", \"value\":\"sadasasd\", \"vote\":\"0\", \"date\":\"Tue Feb 12 2013 14:11:24 GMT-0500 (EST)\"}"
+
+
+3) If you want to get all the topics (i.e the entire thread) the API is: http://127.0.0.1:30920/get with no parameters required 
+and the entire array of topics and replies already sorted is returned as one large thread that is parsed by the FrontEnd on a 
+per-element basis and then displayed on the screen after performing JSON.parse on each of these elements
+
+4) If you want upvote any reply the API is: http://127.0.0.1:30920/inc, the process is similar to posting a new topic or reply where 
+the http://127.0.0.1:30920/inc url is combined with a callback function that provides JSON data for that specific posts which looks like:
+
+{"id":"<id of the reply that you want to upvote>"}
+
+For example:
+
+{"id":"2"}

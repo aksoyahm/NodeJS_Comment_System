@@ -1,0 +1,334 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>jQuery & Node.js Commenting System</title>
+
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.0/jquery.min.js"></script>
+<script type="text/javascript">
+
+var openBox = 0;
+
+//replace URL with html link
+function replaceURL(text) {
+    var exp = /((https?:\/\/)?(www\.)?[^ ]*\.[^ ]*)/ig;
+        
+    //absolute link
+    if (text.indexOf('http://') >= 0) {
+        return text.replace(exp,"<a href='$1'>$1</a>");
+    }
+    //change relative to absolute link
+    else {
+        return text.replace(exp,"<a href='http://$1'>$1</a>"); 
+    }
+}
+    
+//post threads and comments to the server and display them
+function putform(id) {
+    openBox = 0;
+    var parentID = id;
+    //make a placeholder for commentID and change the value on the server
+    var commentID = -1;
+    var date = Date();
+    var inputvalue = replaceURL($('#put-value-field').val());
+
+    try { 
+        //post json object with the the fields parentID, id, value, vote, date
+        var value = '{"parentID":"' + parentID + '", "id":"' + commentID + '", "value":"' + inputvalue + '", "vote":"0", "date":"' + date + '"}';
+    } catch (e) {
+        alert('error!');
+        return;
+    }
+    
+    //post data to server
+    put(id, value, function(success) { 
+        if ( success ) {
+            //get data from server
+            get(id, function(data) {
+                if ( console ) console.log(data);
+                    $('#0').html("");
+
+                    //parse JSON and display
+                    for (var i = 0; i < data.length; i++) {
+                        var obj = data[i];
+                        obj = JSON.parse(obj);
+                        
+                        //if new thread, show reply link
+                        if (obj.parentID == 0) {
+                            $('#' + obj.parentID).prepend("<div class='comment' id='" + obj.id + "'><p class='date'>" + obj.date + "</p><p>" + obj.value + "</p><p class='comment-footer clearfix'><a href='#' onclick='replyBox(" + obj.parentID + ", " + obj.id + ")'>Reply</a><span>(" + obj.vote + ") Total votes</span></p></div>");     
+                        }
+                        else {
+                            
+                             $('#' + obj.parentID).append("<div class='comment' id='" + obj.id + "'><p class='date'>" + obj.date + "</p><p>" + obj.value + "</p><p class='comment-footer clearfix'><a href='#' onclick='replyBox(" + obj.parentID + ", " + obj.id + ")'>Reply</a><span>(" + obj.vote + ") Votes &nbsp; <a href='#' onclick='voteup(" + obj.id + ")'>Vote up</a></span></p></div>");
+                        }
+                        
+                    }
+
+            });
+                        
+        } else {
+            alert('error!');
+        }
+    });
+
+}
+    
+//add or remove reply box
+function replyBox(parentid, id) {
+    if (openBox == 0) {
+       $('#' + id).children('.comment-footer').append("<div id='replyBox'><form id='put-form' method='POST' class='clearfix'><textarea name='value' id='put-value-field' rows='5' cols='40' maxlength='140'></textarea><a href='#' onclick='putform(" + id + ")'>Add comment</a></form></div>");
+        openBox = 1;
+    }
+    else {
+        $('#replyBox').remove();
+        openBox = 0;
+    }
+}
+
+//vote up comments
+function voteup(id) {
+    //post data to server
+     putvote(id, function(success) { 
+        if ( success ) {
+            //get data from server
+            get(id, function(data) {
+                if ( console ) console.log(data);
+                    $('#0').html("");
+
+                    //parse JSON and display
+                    for (var i = 0; i < data.length; i++) {
+                        var obj = data[i];
+                        obj = JSON.parse(obj);
+                                    
+                         if (obj.parentID == 0) {
+                            $('#' + obj.parentID).prepend("<div class='comment' id='" + obj.id + "'><p class='date'>" + obj.date + "</p><p>" + obj.value + "</p><p class='comment-footer clearfix'><a href='#' onclick='replyBox(" + obj.parentID + ", " + obj.id + ")'>Reply</a><span>(" + obj.vote + ") Total votes</span></p></div>");     
+      
+                        }
+                        else {
+                            $('#' + obj.parentID).append("<div class='comment' id='" + obj.id + "'><p class='date'>" + obj.date + "</p><p>" + obj.value + "</p><p class='comment-footer clearfix'><a href='#' onclick='replyBox(" + obj.parentID + ", " + obj.id + ")'>Reply</a><span>(" + obj.vote + ") Votes &nbsp; <a href='#' onclick='voteup(" + obj.id + ")'>Vote up</a></span></p></div>");
+                        }
+                        
+                    }
+
+            });
+                        
+        } else {
+            alert('error!');
+        }
+    });
+}
+
+//post vote data to server
+function putvote(id, callback) {
+    var data = '{"id":"' + id + '"}';
+    $.ajax({
+        url: '/inc', 
+        type: 'POST',
+        data: data,
+        contentType:'text/json',
+        success: function() { if ( callback ) callback(true); },
+        error  : function() { if ( callback ) callback(false); }
+    });   
+}
+
+//post thread and comment data to server
+function put(id, data, callback) {
+    $.ajax({
+        url: '/post',
+        type: 'POST',
+        data: JSON.stringify(data),
+        contentType: 'text/json',
+        success: function() { if ( callback ) callback(true); },
+        error  : function() { if ( callback ) callback(false); }
+    });
+}
+
+//get thread and comment data from server
+function get(id, callback) {
+    $.ajax({
+        url:'/get',
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) { if ( callback ) callback(data); },
+        error  : function()     { if ( callback ) callback(null); }
+    });
+}
+
+</script>
+
+<script type="text/javascript">
+
+$(document).ready(function() {
+
+	var id = 0;
+            get(id, function(data) {
+                if ( console ) console.log(data);
+                    $('#0').html("");
+
+                    //parse JSON and display
+                    for (var i = 0; i < data.length; i++) {
+                        var obj = data[i];
+                        obj = JSON.parse(obj);
+                                    
+                         if (obj.parentID == 0) {
+                            $('#' + obj.parentID).prepend("<div class='comment' id='" + obj.id + "'><p class='date'>" + obj.date + "</p><p>" + obj.value + "</p><p class='comment-footer clearfix'><a href='#' onclick='replyBox(" + obj.parentID + ", " + obj.id + ")'>Reply</a><span>(" + obj.vote + ") Total votes</span></p></div>");     
+      
+                        }
+                        else {
+                            $('#' + obj.parentID).append("<div class='comment' id='" + obj.id + "'><p class='date'>" + obj.date + "</p><p>" + obj.value + "</p><p class='comment-footer clearfix'><a href='#' onclick='replyBox(" + obj.parentID + ", " + obj.id + ")'>Reply</a><span>(" + obj.vote + ") Votes &nbsp; <a href='#' onclick='voteup(" + obj.id + ")'>Vote up</a></span></p></div>");
+                        }
+                        
+                    }
+
+            });
+
+		
+});
+
+</script>
+
+
+<style>
+     body {
+        font-family: verdana, arial, sans-serif;
+        font-size: 12px;
+        color: #333;
+        line-height: 1.5em;
+        text-align: center;
+    }
+    .container {
+        width: 600px;
+        text-align: left;
+        padding: 10px;
+        margin: 0 auto;
+        position: relative;
+    }
+    h1 {
+        font-size: 2.5em;
+        font-family: garamond, 'times new roman';
+        text-align: center;
+        margin: 1em 0;
+    }
+    a {
+        color: #008de7;
+        text-decoration: none;
+    }
+    a:hover {
+        color: #00a2ff;
+        text-decoration: underline;
+    }
+    textarea {
+        display: block;
+        width: 96%;
+        border: 1px solid #bfbfbf;
+        padding: 0.7em 2%;
+        clear: both;
+    }
+    label {
+        display: block;
+    }
+    #put-form {
+        width: 92%;
+        background: #f1f1f1;
+        padding: 1.5em 4%;
+        margin-top: 25px;
+    }
+    .comment {
+        margin: 1em 0;
+    }
+    .comment .comment {
+        margin: 0 0 0 30px;
+    }
+    .comment p {
+        padding: 0;
+        margin: 1em 0;
+    }
+    .date, .comment-footer {
+        font-size: 10px;
+    }
+    .comment-footer {
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 10px;
+    }
+    .comment-footer a {
+        float: left;
+        color: #008de7;
+        background: #ddd;
+        padding: 0 10px;
+        border-radius: 18px;
+        margin-bottom: 15px;
+    }
+    .comment-footer a:hover{
+        background: #008de7;
+        color: #fff;
+        text-decoration: none;
+    }
+    .comment-footer span {
+        float: right;
+    }
+    .comment-footer span a {
+        display: inline-block;
+        float: none;
+    }
+    .box {
+        width: 600px;
+        position: absolute;
+        top: 280px;
+        left: 10px;
+        padding-bottom: 50px;
+    }
+    #replyBox #put-form {
+        padding-bottom: 0;
+        margin: 0;
+    }
+    #replyBox {
+        clear: both;
+    }
+    #replyBox a, .threadBtn {
+        float: right;
+        color: #fff;
+        background: #008de7;
+        padding: 3px 14px;
+        border-radius: 36px;
+        margin-top: 10px;
+    }
+    #replyBox a {
+        font-size: 10px;
+        padding: 0 12px;
+        margin-top: 10px;
+    }
+    #replyBox a:hover, .threadBtn:hover {
+        color: #fff;
+        background: #00a2ff;
+        text-decoration: none;
+    }
+    .clearfix:before, .clearfix:after {
+        content: " ";
+        display: table;
+    }
+    .clearfix:after {
+        clear: both;
+    }
+    .clearfix {
+        *zoom: 1;
+    }
+</style>
+
+</head>
+
+<body>
+
+<div class='container clearfix'>
+
+    <h1>jQuery & Node.js Commenting System</h1>
+
+    <div id="0" class="box"></div>
+
+    <form class='clearfix' id="put-form" method="POST">
+        <textarea name="value" id="put-value-field" rows="5" cols="50" maxlength="140"></textarea>
+        <a href="#" class='threadBtn' onclick="putform(0)">Post new thread</a>
+    </form>
+
+</div>
+
+</body>
+</html>
